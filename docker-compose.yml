@@ -4,7 +4,7 @@ services:
     env_file: run.env
     image: gauravbansal74/solution:v0.0.0-beta0.2
     ports:
-      - "8000:8000"
+      - "9000:9000"
     links:
       - redis
 
