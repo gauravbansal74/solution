@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gauravbansal74/solution/config"
 	"github.com/gauravbansal74/solution/route"
 	"github.com/gauravbansal74/solution/server"
@@ -19,6 +20,9 @@ func main() {
 
 	/// Load config from env, vars prefixed with APP_
 	conf = config.LoadConfig()
+	if conf.GoogleApiKey == "" {
+		logger.Fatal("google-api-key", fmt.Errorf("Google API key is required"), "Google API key is required", nil)
+	}
 
 	// Load and Configure Logger for this Project
 	logger.LoggerConfig(conf)

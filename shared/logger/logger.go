@@ -31,7 +31,7 @@ func LoggerConfig(conf config.Config) {
 	}
 }
 
-// ("payments", "Msg", {"key":value})
+// Debug Log
 func Debug(message string, other ...map[string]interface{}) {
 	fields := map[string]interface{}{}
 	if other != nil {
@@ -40,7 +40,7 @@ func Debug(message string, other ...map[string]interface{}) {
 	log.WithFields(log.Fields{"name": AppName}).WithFields(fields).Debug(message)
 }
 
-// ("payments", "Msg", {"key":value})
+// Info Logs
 func Info(who string, message string, other ...map[string]interface{}) {
 	fields := map[string]interface{}{}
 	if other != nil {
@@ -49,7 +49,7 @@ func Info(who string, message string, other ...map[string]interface{}) {
 	log.WithFields(log.Fields{"user": who, "name": AppName}).WithFields(fields).Info(message)
 }
 
-// ("payments", error, "err", {"key":value})
+// Fatal Logs
 func Fatal(who string, err error, message string, other ...map[string]interface{}) {
 	fields := map[string]interface{}{}
 	if other != nil {
@@ -58,7 +58,7 @@ func Fatal(who string, err error, message string, other ...map[string]interface{
 	log.WithFields(log.Fields{"user": who, "name": AppName}).WithFields(fields).WithError(err).Fatal(message)
 }
 
-// ("payments", error, "err", {"key":value})
+// Errors Logs
 func Error(who string, err error, message string, other ...map[string]interface{}) {
 	fields := map[string]interface{}{}
 	if other != nil {

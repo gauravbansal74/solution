@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	URL   = "https://maps.googleapis.com/maps/api/distancematrix/json"
-	Units = "imperial"
+	URL                = "https://maps.googleapis.com/maps/api/distancematrix/json"
+	Units              = "imperial"
+	InvalidLongLat     = "Long/Lat are not valid for locations"
+	DistanceAPIError   = "Google Maps Distance API error"
+	UniquePathwaysZero = "Unique pathways can't be zero"
 )
 
 type DistanceResult struct {
@@ -38,7 +41,8 @@ type DistanceResult struct {
 	Status string `json:"status"`
 }
 
-func GetMapDistance(origin []string, destination []string) (DistanceResult, error) {
+// Get Distance between locations using Google Map Distance API
+func getMapDistance(origin []string, destination []string) (DistanceResult, error) {
 	dResult := DistanceResult{}
 	// Prepare Request URI with query parameters
 	apiURI, err := url.Parse(URL)
@@ -69,7 +73,8 @@ func GetMapDistance(origin []string, destination []string) (DistanceResult, erro
 	return dResult, nil
 }
 
-func UniquePathways(length int) []string {
+// Find Unique Pathways for multple dropzone locations
+func uniquePathways(length int) []string {
 	allLocations := map[int]int{}
 	uniquePath := make([]string, length-1)
 	// Create total destination location Array
@@ -91,6 +96,16 @@ func UniquePathways(length int) []string {
 	return uniquePath
 }
 
+// Check  string value is Number or Not -if Number return TRUE else FALSE
+func isNumber(input string) bool {
+	if _, err := strconv.ParseFloat(input, 64); err == nil {
+		return true
+	} else {
+		return false
+	}
+}
+
+//
 func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 	var err error
 	model, err := mdistance.Parse(payload)
@@ -98,16 +113,18 @@ func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 		logger.Error("server", err, "Error while parsing redis queue message", logger.Fields{
 			"Id": model.ID,
 		})
+		model.Status = 0
+		model.Message = err.Error()
 		return model, err
 	} else {
 		length := len(model.Path)
-		uniquePaths := UniquePathways(length)
+		uniquePaths := uniquePathways(length)
 		if len(uniquePaths) > 0 {
 			values := map[string]int{}
 			timeValues := map[string]int{}
 			for i := 0; i < len(model.Path); i++ {
 				startFrom := model.Path[i]
-				if len(startFrom) == 2 {
+				if len(startFrom) == 2 && (isNumber(startFrom[0]) && isNumber(startFrom[1])) {
 					for j := 1; j < len(model.Path); j++ {
 						if i != j { // If i == j, it means distance is zero between same locations.
 							endTo := model.Path[j]
@@ -117,26 +134,32 @@ func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 									values[strconv.Itoa(i)+"_"+strconv.Itoa(j)] = 0
 									timeValues[strconv.Itoa(i)+"_"+strconv.Itoa(j)] = 0
 								} else {
-									mapDistance, err := GetMapDistance(startFrom, endTo)
+									mapDistance, err := getMapDistance(startFrom, endTo)
 									if err != nil {
+										model.Status = 0
+										model.Message = err.Error()
 										return model, err
 									} else {
 										if len(mapDistance.Rows) > 0 {
 											values[strconv.Itoa(i)+"_"+strconv.Itoa(j)] = mapDistance.Rows[0].Elements[0].Distance.Value
 											timeValues[strconv.Itoa(i)+"_"+strconv.Itoa(j)] = mapDistance.Rows[0].Elements[0].Duration.Value
 										} else {
-											logger.Error("server", fmt.Errorf("Error while fetching distance using Google maps"), "Error while fetching distance using Google maps", logger.Fields{
+											logger.Error("server", fmt.Errorf(DistanceAPIError), DistanceAPIError, logger.Fields{
 												"Id": model.ID,
 											})
-											return model, fmt.Errorf("Error while fetching distance using Google maps")
+											model.Status = 0
+											model.Message = DistanceAPIError
+											return model, fmt.Errorf(DistanceAPIError)
 										}
 									}
 								}
 							} else {
-								logger.Error("server", fmt.Errorf("Long Lat is not proper"), "Long Lat is not proper", logger.Fields{
+								logger.Error("server", fmt.Errorf(InvalidLongLat), InvalidLongLat, logger.Fields{
 									"Id": model.ID,
 								})
-								return model, fmt.Errorf("Long Lat is not proper")
+								model.Status = 0
+								model.Message = InvalidLongLat
+								return model, fmt.Errorf(InvalidLongLat)
 							}
 						} else {
 							// If i and j are equals then distance would be zero always
@@ -145,27 +168,29 @@ func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 						}
 					}
 				} else {
-					logger.Error("server", fmt.Errorf("Long Lat is not proper"), "Long Lat is not proper", logger.Fields{
+					logger.Error("server", fmt.Errorf(InvalidLongLat), InvalidLongLat, logger.Fields{
 						"Id": model.ID,
 					})
-					return model, fmt.Errorf("Long Lat is not proper")
+					model.Status = 0
+					model.Message = InvalidLongLat
+					return model, fmt.Errorf(InvalidLongLat)
 				}
 			}
 			values["0_0"] = 0
-			shorestPath := CalculatePathwaysDistance(values, uniquePaths)
-			outputData := PrepareOutput(shorestPath, values, timeValues, *model)
+			shorestPath := calculatePathwaysDistance(values, uniquePaths)
+			outputData := prepareOutput(shorestPath, values, timeValues, *model)
 			return &outputData, nil
 		} else {
-			logger.Error("server", fmt.Errorf("Unique Path length is Zero"), "Unique pathways can't be zero", logger.Fields{
+			logger.Error("server", fmt.Errorf(UniquePathwaysZero), UniquePathwaysZero, logger.Fields{
 				"Id": model.ID,
 			})
-			return model, fmt.Errorf("Unique pathways can't be zero")
+			return model, fmt.Errorf(UniquePathwaysZero)
 		}
 	}
 	return model, nil
 }
 
-func PrepareOutput(shorestPath string, allDistanceValues map[string]int, allTimeValues map[string]int, model mdistance.Entity) mdistance.Entity {
+func prepareOutput(shorestPath string, allDistanceValues map[string]int, allTimeValues map[string]int, model mdistance.Entity) mdistance.Entity {
 	previeousPaths := make([][]string, len(model.Path))
 	for i := 0; i < len(model.Path); i++ {
 		previeousPaths[i] = model.Path[i]
@@ -184,7 +209,7 @@ func PrepareOutput(shorestPath string, allDistanceValues map[string]int, allTime
 	return model
 }
 
-func CalculatePathwaysDistance(allDistances map[string]int, uniquePathways []string) string {
+func calculatePathwaysDistance(allDistances map[string]int, uniquePathways []string) string {
 	allDistanceValues := map[string]int{}
 	for i := 0; i < len(uniquePathways); i++ {
 		uniquePath := uniquePathways[i]
@@ -193,11 +218,11 @@ func CalculatePathwaysDistance(allDistances map[string]int, uniquePathways []str
 			allDistanceValues[uniquePath] = allDistanceValues[uniquePath] + allDistances[string(uniquePath[j])+"_"+string(uniquePath[j+1])]
 		}
 	}
-	shorestPath := GetShorestPath(allDistanceValues)
+	shorestPath := getShorestPath(allDistanceValues)
 	return shorestPath
 }
 
-func GetShorestPath(allDistanceValues map[string]int) string {
+func getShorestPath(allDistanceValues map[string]int) string {
 	allValues := make([]int, len(allDistanceValues))
 	var i = 0
 	for _, v := range allDistanceValues {

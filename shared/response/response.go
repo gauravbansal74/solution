@@ -44,7 +44,7 @@ func SendError(w http.ResponseWriter, status http.ConnState, message interface{}
 	w.Write(js)
 }
 
-// SendError calls Send by without a count or results
+// SendToken calls Send by without a count or results
 func SendToken(w http.ResponseWriter, tok string) {
 	i := Token{}
 	i.ID = tok
@@ -60,7 +60,7 @@ func SendToken(w http.ResponseWriter, tok string) {
 	w.Write(js)
 }
 
-// SendError calls Send by without a count or results
+// SendOther calls Send by without a count or results
 func SendOther(w http.ResponseWriter, status http.ConnState, message interface{}) {
 	i := Other{}
 	i.Message = message
@@ -76,7 +76,7 @@ func SendOther(w http.ResponseWriter, status http.ConnState, message interface{}
 	w.Write(js)
 }
 
-// SendError calls Send by without a count or results
+// SendSuccess calls Send by without a count or results
 func SendSuccess(w http.ResponseWriter, Status interface{}, Path interface{}, TotalDistance interface{}, TotalTime interface{}) {
 	i := Success{}
 	i.Status = Status
