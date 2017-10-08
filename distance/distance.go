@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -76,12 +77,13 @@ func getMapDistance(origin []string, destination []string) (DistanceResult, erro
 // Find Unique Pathways for multple dropzone locations
 func uniquePathways(length int) []string {
 	allLocations := map[int]int{}
-	uniquePath := make([]string, length-1)
+	var x = 0
+	uniquePath := make([]string, int(math.Exp2(float64(length-1))))
 	// Create total destination location Array
 	for i := 1; i < length; i++ {
 		allLocations[i] = i
 	}
-	for i := 1; i < length; i++ {
+	for i := 1; i <= length; i++ {
 		for j := 1; j < length-1; j++ {
 			temp := allLocations[j]
 			allLocations[j] = allLocations[j+1]
@@ -90,7 +92,8 @@ func uniquePathways(length int) []string {
 			for k := 1; k < length; k++ {
 				currentPath = currentPath + strconv.Itoa(allLocations[k])
 			}
-			uniquePath[i-1] = currentPath
+			uniquePath[x] = currentPath
+			x++
 		}
 	}
 	return uniquePath
@@ -117,17 +120,21 @@ func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 		model.Message = err.Error()
 		return model, err
 	} else {
+		// fmt.Println("initial Model", model)
 		length := len(model.Path)
 		uniquePaths := uniquePathways(length)
+		// fmt.Println("AllUniquePath", uniquePaths)
 		if len(uniquePaths) > 0 {
 			values := map[string]int{}
 			timeValues := map[string]int{}
 			for i := 0; i < len(model.Path); i++ {
 				startFrom := model.Path[i]
+				// fmt.Println("startFrom", startFrom)
 				if len(startFrom) == 2 && (isNumber(startFrom[0]) && isNumber(startFrom[1])) {
 					for j := 1; j < len(model.Path); j++ {
 						if i != j { // If i == j, it means distance is zero between same locations.
 							endTo := model.Path[j]
+							// fmt.Println("endTo", endTo)
 							if len(endTo) == 2 {
 								if startFrom[0] == endTo[0] && startFrom[1] == endTo[1] {
 									// If i !=j but still long and lat is same for locations then distance would be zero.
@@ -177,8 +184,13 @@ func CheckForShortestDistance(payload string) (*mdistance.Entity, error) {
 				}
 			}
 			values["0_0"] = 0
+			// fmt.Println("Values", values)
+			// fmt.Println("TimeValues", timeValues)
+			// fmt.Println("Models", model)
 			shorestPath := calculatePathwaysDistance(values, uniquePaths)
+			// fmt.Println("shorestPath", shorestPath)
 			outputData := prepareOutput(shorestPath, values, timeValues, *model)
+			// fmt.Println("outputData", outputData)
 			return &outputData, nil
 		} else {
 			logger.Error("server", fmt.Errorf(UniquePathwaysZero), UniquePathwaysZero, logger.Fields{
