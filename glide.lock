@@ -1,0 +1,40 @@
+hash: 663f948c7fef4e8ead7ceca56a3b45a3be757816ed6b6dc4238dffc3615197e7
+updated: 2017-10-09T02:01:53.207224373+08:00
+imports:
+- name: github.com/adjust/redismq
+  version: e2a56d9bb404cb0e47cc737fdc3fe1fd6c095743
+- name: github.com/go-redis/redis
+  version: 9c20773cb24624a4ad05cddb60583b61f4ffa701
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: ac112f7d75a0714af1bd86ab17749b31f7809640
+- name: github.com/kelseyhightower/envconfig
+  version: 70f0258d44cbaa3b6a2581d82f58da01a38e4de4
+- name: github.com/Sirupsen/logrus
+  version: 89742aefa4b206dcf400792f3bd35b542998eb3b
+- name: golang.org/x/crypto
+  version: eb71ad9bd329b5ac0fd0148dd99bd62e8be8e035
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: 07c182904dbd53199946ba614a412c61d3c548f5
+  subpackages:
+  - unix
+  - windows
+- name: gopkg.in/bsm/ratelimit.v1
+  version: db14e161995a5177acef654cb0dd785e8ee8bc22
+- name: gopkg.in/redis.v3
+  version: b5e368500d0a508ef8f16e9c2d4025a8a46bcc29
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+testImports: []

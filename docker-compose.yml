@@ -1,0 +1,14 @@
+version: "2"
+services:
+  solution:
+    env_file: run.env
+    image: gauravbansal74/solution:v0.0.0-beta0.2
+    ports:
+      - "8000:8000"
+    links:
+      - redis
+
+  redis:
+    image: redis:alpine  
+    ports:
+      - "6379:6379"    
