@@ -8,8 +8,9 @@
  - Docker API version 1.32
  - Google API Key
  - Enable Google MAP API using developer console
- **Create run.env file using run.env.sample. Don't forget to update Redis host and Google API key in run.env file.**
  ```
+ **Create run.env file using run.env.sample. Don't forget to update Redis host and Google API key in run.env file.**
+
 
 
  **Build and Run**
